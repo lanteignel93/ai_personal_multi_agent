@@ -31,15 +31,24 @@ These instructions define the working contract for Codex when editing this repo.
 
 * When implementing “answering” flows, prefer local vault retrieval (Personal/Project) before external sources.
 * Any user-facing synthesis must include source attribution categories:
-* Personal Vault
-* Project Vault
-* External Source
-* Model-only reasoning (if no retrieval/search used)
+  * Personal Vault
+  * Project Vault
+  * External Source
+  * Model-only reasoning (if no retrieval/search used)
 
 ### 4) Keep changes incremental
 
 * Make the smallest coherent change that advances the current milestone.
 * Avoid large refactors unless requested.
+
+### 4.1) Evolving Rules
+
+* Proactively suggest new AGENTS.md rules based on user requests and observed workflow gaps.
+
+### 4.2) Determinism & Reproducibility
+
+* Keep `uv.lock` updated whenever dependencies change.
+* Pin versions explicitly; avoid floating dependency ranges unless justified.
 
 ### 5) Context Hygiene
 
@@ -113,6 +122,11 @@ Keep PR/commit scope aligned to the current milestone.
 * Types: mypy (where practical)
 * Tests: pytest
 
+### Configuration Hygiene
+
+* Track `.env.example` with documented defaults for all env vars.
+* Keep `.env` untracked; never commit secrets.
+
 ### Architecture Documents
 
 These are source-of-truth references:
@@ -128,17 +142,39 @@ If implementation choices conflict with these docs, flag it and propose an adjus
 ### General Standards
 
 * Prefer small modules with clear responsibilities.
+* Make sure code will pass the pre-commit ruff requirements. 
 * Use explicit, typed interfaces for providers (`LLMProvider`, `SearchProvider`).
 * Avoid “magic” globals; configuration should flow from settings.
 * Errors: define custom exception classes; do not swallow exceptions silently.
 * Logging must not leak secrets (API keys) or sensitive vault content.
+* User-facing errors must be actionable and include contextual hints (without secrets).
 
+### Error Handling Hygiene
+* **No Bare Excepts:** NEVER use `except Exception:` without re-raising or logging with `logger.exception`.
+* **Custom Exceptions:** Define domain-specific exceptions (e.g., `AgentExecutionError`) rather than generic `Exception`.
+* **Atomic Operations:** Use `try/finally` blocks to guarantee resource cleanup.
+* **Reraise Policy:** If you catch broad exceptions, re-raise and log context.
+
+### Logging Discipline (Loguru)
+* **No Print Statements:** Use `logger` exclusively.
+* **Structured Context:** Prefer `logger.bind(task_id=...)` or structured kwargs over f-strings.
+* **Secret Sanitization:** NEVER log raw API keys or PII.
+
+### Defensive Programming (Reliability)
+* **Trust No Input:** Validate arguments at the entry point.
+* **Fail Fast:** Raise exceptions immediately upon invalid state; do not propagate `None`.
+* **Assertions:** Use `assert` only for internal invariants, never for runtime user errors.
+
+### Tech Stack Standards (Pydantic & Python)
+* **Pydantic V2:** Use `model_dump()`, `model_validate()`, and `field_validator`.
+* **Strict Config:** Set `extra='forbid'` for agent schemas.
+* **Type Safety:** Use `typing.Annotated` for tools; prefer `pathlib.Path`.
 ### Modern Tooling (uv)
 
 *From simple-modern-uv template*
 
 * **Package Management:**
-* **Strictly use `uv**` for all dependency management.
+* **Strictly use `uv`** for all dependency management.
 * ❌ NEVER use `pip install`, `poetry`, or `venv` directly.
 * ✅ Use: `uv add <package>`, `uv sync`, `uv run <script>`.
 
@@ -147,26 +183,12 @@ If implementation choices conflict with these docs, flag it and propose an adjus
 * Do not rely on global Python. Always execute code via `uv run`.
 * *Example:* `uv run pytest` instead of `pytest`.
 
+### CLI UX
 
+* Every new CLI command must include an example in `--help` or `README.md`.
 
-### Tech Stack Standards (Pydantic & Python)
+### Agentic Patterns
 
-*From Cole Medin’s Pydantic AI Protocol*
-
-* **Pydantic V2 Strictness:**
-* NEVER use `.dict()`; use `.model_dump()`.
-* NEVER use `.parse_obj()`; use `.model_validate()`.
-* Use `field_validator` (mode='before'/'after') instead of the old `validator`.
-* Always set `model_config = ConfigDict(extra='forbid')` for strict agent schemas.
-
-
-* **Type Safety:**
-* Use `typing.Annotated` for all Tool arguments.
-* Prefer `pathlib.Path` over `str` for file paths.
-* No `Any` types unless absolutely necessary.
-
-
-* **Agentic Patterns:**
 * **Tool Definitions:** Every function exposed to an agent MUST have a docstring that describes *when* to use it, not just *how*.
 * **Return Values:** Tools should return structured text or Pydantic models, not complex objects.
 
@@ -177,13 +199,14 @@ If implementation choices conflict with these docs, flag it and propose an adjus
 ## Safe File I/O Rules
 
 * Do not read/write outside configured whitelisted directories:
-* vault paths
-* project workspace
+  * vault paths
+  * project workspace
 
 
-* Never modify `.env`, secrets, SSH keys, or `.git` internals without asking for approval.
+* Never modify secrets, SSH keys, or `.git` internals without asking for approval.
+* Prefer `.env.example` for tracked defaults; keep `.env` local unless explicitly requested.
 * For patch application:
-* produce diff → request approval → apply patch → verify → log.
+  * produce diff → request approval → apply patch → verify → log.
 
 
 
@@ -212,6 +235,7 @@ When tasks are non-trivial, follow this protocol:
 * Make incremental edits.
 * Keep changes testable.
 * Prefer adding tests for new logic.
+* If tests are skipped, explain why and propose a follow-up.
 
 3. **Verify (Standard Commands)**
 *Use these standard commands to verify your work. ALWAYS use `uv run`.*
@@ -220,7 +244,7 @@ When tasks are non-trivial, follow this protocol:
 * **Integration:** `uv run pytest tests/integration`
 * **Linting:** `uv run ruff check .`
 * **Type Check:** `uv run mypy .`
-* **Dry Run:** `uv run python -m src.main chat "test" --dry-run`
+* **Dry Run:** `uv run python -m ai.cli chat "test" --dry-run`
 * If you cannot run commands, state exactly what the user should run.
 
 4. **Review**
@@ -228,6 +252,7 @@ When tasks are non-trivial, follow this protocol:
 * Provide a concise diff summary and any tradeoffs.
 * **Context Preservation:** If a file is too large to read, ask the user to run `ai vault query` to get a summarized snippet rather than summarizing it yourself.
 * **Memory:** Update `MEMORY.md` if a major architectural decision was made (e.g. "We chose Schema X over Y because...").
+* **Docs Sync:** Update `README.md` when new CLI commands or env vars are added.
 
 ---
 
@@ -241,6 +266,7 @@ Before finalizing changes, verify:
 * Source attribution categories are preserved end-to-end.
 * SQLite task ledger records tasks/steps/patches.
 * CLI commands remain ergonomic for tmux/Neovim use.
+* New commands log tasks and steps in the ledger.
 
 ---
 
@@ -263,9 +289,9 @@ All provider selection is config-driven:
 
 * `LLM_PROVIDER=gemini|openai|claude`
 * keys via environment:
-* `GEMINI_API_KEY`
-* `OPENAI_API_KEY`
-* `ANTHROPIC_API_KEY` (or `CLAUDE_API_KEY` if preferred—choose one and standardize)
+  * `GEMINI_API_KEY`
+  * `OPENAI_API_KEY`
+  * `ANTHROPIC_API_KEY` (or `CLAUDE_API_KEY` if preferred—choose one and standardize)
 
 
 

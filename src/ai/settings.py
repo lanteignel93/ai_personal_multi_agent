@@ -8,6 +8,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "echo"
     ai_ledger_path: Path = Path(".ai/task_ledger.db")
+    ai_log_level: str = "INFO"
     gemini_api_key: str | None = None
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None

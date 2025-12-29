@@ -5,21 +5,36 @@ Terminal-first, multi-provider agent system with local vault retrieval, safe dif
 ## Quick start
 
 ```bash
+uv venv
 uv pip install -e ".[dev]"
 ```
 
 Run the CLI:
 
 ```bash
-ai chat "hello world"
+uv run ai chat "hello world"
 ```
+
+## Configuration
+
+Copy `.env.example` to `.env` and edit as needed:
+
+```bash
+cp .env.example .env
+```
+
+Key variables:
+
+- `LLM_PROVIDER=echo|gemini|openai|claude`
+- `AI_LEDGER_PATH=/absolute/path/to/ledger-repo/task_ledger.db`
+- `AI_LOG_LEVEL=INFO`
 
 ## Development
 
 ```bash
-ruff check .
-ruff format .
-pytest
+uv run ruff check .
+uv run ruff format .
+uv run pytest
 ```
 
 ## CI
