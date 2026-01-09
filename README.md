@@ -47,7 +47,7 @@ uv run pytest
 Build indexes:
 
 ```bash
-uv run ai vault index --vault both
+uv run ai vault index --vault both --mode update-all
 ```
 
 Query indexes:
