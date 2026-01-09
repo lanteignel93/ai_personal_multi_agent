@@ -28,6 +28,11 @@ Key variables:
 - `LLM_PROVIDER=echo|gemini|openai|claude`
 - `AI_LEDGER_PATH=/absolute/path/to/ledger-repo/task_ledger.db`
 - `AI_LOG_LEVEL=INFO`
+- `EMBEDDING_PROVIDER=gemini`
+- `GEMINI_EMBEDDING_MODEL=text-embedding-004`
+- `PERSONAL_VAULT_PATH=/home/laurent/obsidian/Personal`
+- `PROJECT_VAULT_PATH=/home/laurent/obsidian/Project`
+- `VECTOR_INDEX_ROOT=/home/laurent/obsidian/ai_vector_idx`
 
 ## Development
 
@@ -35,6 +40,20 @@ Key variables:
 uv run ruff check .
 uv run ruff format .
 uv run pytest
+```
+
+## Vaults (V1)
+
+Build indexes:
+
+```bash
+uv run ai vault index --vault both
+```
+
+Query indexes:
+
+```bash
+uv run ai vault query "your query" --vault personal --top-k 5
 ```
 
 ## CI

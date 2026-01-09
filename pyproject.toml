@@ -27,7 +27,7 @@ ai = "ai.cli:app"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["ai", "ai.providers"]
+packages = ["ai", "ai.providers", "ai.vault"]
 
 [tool.ruff]
 line-length = 88
