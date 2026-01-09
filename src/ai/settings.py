@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     llm_provider: str = "echo"
     ai_ledger_path: Path = Path(".ai/task_ledger.db")
     ai_log_level: str = "INFO"
+    embedding_provider: str = "gemini"
+    gemini_embedding_model: str = "text-embedding-004"
+    personal_vault_path: Path | None = None
+    project_vault_path: Path | None = None
+    vector_index_root: Path | None = None
     gemini_api_key: str | None = None
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
